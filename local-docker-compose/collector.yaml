@@ -1,0 +1,38 @@
+extensions:
+  health_check:
+  sigv4auth:
+    region: us-west-2
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+receivers:
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: 'prometheus-agent'
+            scrape_interval: 1s
+            static_configs:
+              - targets: ['avalanche-collector:8080']
+processors:
+  batch:
+
+exporters:
+  prometheusremotewrite:
+    # Workspace 2
+    endpoint: "https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-d6320f4b-40ab-488f-852c-cbb68a5fa9d2/api/v1/remote_write"
+    auth:
+      authenticator: sigv4auth
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+
+  extensions: [pprof,sigv4auth]
+  telemetry:
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888
+    logs:
+      level: debug

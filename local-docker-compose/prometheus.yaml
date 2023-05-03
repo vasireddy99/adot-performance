@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 1s
+  evaluation_interval: 1s
+  query_log_file: query.log
+  external_labels:
+    monitor: 'codelab-monitor'
+
+# Remote write exporter link
+remote_write:
+    # Workspace 1
+    - url: https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-f5ab361c-f6f3-4b8a-9df1-7c3423a97588/api/v1/remote_write
+      sigv4:
+        region: us-west-2
+      # queue_config:
+      #   batch_send_deadline: 1s
+      #   min_shards: 10
+      #   max_shards: 10
+      #   max_samples_per_send: 2000
+
+scrape_configs:
+
+  - job_name: "avalanche"
+    scheme: http
+    static_configs:
+      - targets:
+        - avalanche:8080
