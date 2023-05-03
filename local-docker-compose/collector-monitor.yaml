@@ -1,0 +1,39 @@
+extensions:
+  health_check:
+  sigv4auth:
+    region: us-west-2
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+receivers:
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: 'prometheus-agent-monitoring'
+            scrape_interval: 5s
+            static_configs:
+              - targets: ['prometheus:9090']
+          - job_name: 'collector-monitoring'
+            scrape_interval: 5s
+            static_configs:
+              - targets: ['collector:8888']
+
+processors:
+  batch:
+
+exporters:
+  prometheusremotewrite:
+   # Workspace Monitor
+    endpoint: "https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-211e4d44-68f9-4be9-a0c5-f8b79ad4d1fa/api/v1/remote_write"
+    auth:
+      authenticator: sigv4auth
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      exporters: [prometheusremotewrite]
+
+  extensions: [pprof,sigv4auth]
+  telemetry:
+    logs:
+      level: debug

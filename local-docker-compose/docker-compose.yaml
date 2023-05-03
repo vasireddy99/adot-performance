@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  avalanche:
+    image: quay.io/freshtracks.io/avalanche:latest
+    command: --port=8080 --metric-count=4000 --label-count=10 --series-count=10 --metric-interval=12000 --series-interval=120000
+  avalanche-collector:
+    image: quay.io/freshtracks.io/avalanche:latest
+    command: --port=8080 --metric-count=4000 --label-count=10 --series-count=10 --metric-interval=12000 --series-interval=120000
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+    - '--config.file=/etc/prometheus.yaml'
+    - '--enable-feature=agent'
+    volumes:
+    - ./prometheus.yaml:/etc/prometheus.yaml
+    - ~/.aws:/home/.aws
+    mem_limit: "8g"
+    mem_reservation: "1g"
+    ports:
+      - 9090:9090
+  collector:
+    image: amazon/aws-otel-collector:v0.28.0
+    mem_limit: "4g"
+    mem_reservation: "1g"
+    command:
+      - '--config=/etc/collector.yaml'
+    volumes:
+      - './collector.yaml:/etc/collector.yaml'
+      - ~/.aws:/root/.aws
+  monitoring-collector:
+    image: amazon/aws-otel-collector:v0.28.0
+    command:
+      - '--config=/etc/collector-monitor.yaml'
+    volumes:
+      - './collector-monitor.yaml:/etc/collector-monitor.yaml'
+      - ~/.aws:/root/.aws
