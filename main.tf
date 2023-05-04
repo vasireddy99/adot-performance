@@ -26,7 +26,7 @@ data "aws_ami" "amazonlinux2" {
 resource "aws_instance" "adot-sample" {
   count                       = var.instance_count
   ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "c5a.large"
+  instance_type               = "m5.2xlarge"
   associate_public_ip_address = true
   key_name                    = local.ssh_key_name
   subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
@@ -105,9 +105,10 @@ data "template_file" "mock-json" {
 }
 
 
+/*
 resource "aws_instance" "mock-server" {
   ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "c5a.large"
+  instance_type               = "m5.2xlarge"
   associate_public_ip_address = true
   key_name                    = local.ssh_key_name
   subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
@@ -181,11 +182,12 @@ resource "null_resource" "setup_mock_server" {
     }
   }
 }
+*/
 
 //Collector
 resource "aws_instance" "collection_agent" {
   ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "c5a.large"
+  instance_type               = "m5.2xlarge"
   associate_public_ip_address = true
   subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
   vpc_security_group_ids      = ["${aws_security_group.adot-sg.id}"]
@@ -207,7 +209,7 @@ resource "aws_instance" "collection_agent" {
 data "template_file" "collector-config" {
   template = file(var.collector_config_path)
   vars = {
-    mockServerPublicIP = aws_instance.mock-server.public_ip
+//    mockServerPublicIP = aws_instance.mock-server.public_ip
     region            =  var.region
     port              = var.port
   }
@@ -216,7 +218,7 @@ data "template_file" "collector-config" {
 data "template_file" "prometheus-config" {
   template = file(var.prometheus_config_path)
   vars = {
-    mockServerPublicIP = aws_instance.mock-server.public_ip
+//    mockServerPublicIP = aws_instance.mock-server.public_ip
     region            =  var.region
     port              = var.port
   }
@@ -242,7 +244,7 @@ resource "null_resource" "download_collector_from_local" {
 resource "null_resource" "start_prometheus" {
   count    = var.collector ? 0 : 1
   # either getting the install package from s3 or from local
-  depends_on = [ null_resource.setup_sample_app, null_resource.setup_mock_server]
+  depends_on = [ null_resource.setup_sample_app]
   provisioner "file" {
     content     = data.template_file.prometheus-config.rendered
     destination = "/tmp/prometheus.yml"
@@ -291,7 +293,7 @@ locals {
 resource "null_resource" "start_collector" {
   count    = var.collector ? 1 : 0
   # either getting the install package from s3 or from local
-  depends_on = [null_resource.download_collector_from_local, null_resource.setup_sample_app, null_resource.setup_mock_server]
+  depends_on = [null_resource.download_collector_from_local, null_resource.setup_sample_app]
   provisioner "file" {
     content     = data.template_file.collector-config.rendered
     destination = "/tmp/ot-default.yml"
@@ -306,6 +308,7 @@ resource "null_resource" "start_collector" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y",
       local.wait_cloud_init,
       local.install_command,
       local.start_command,
@@ -322,7 +325,8 @@ resource "null_resource" "start_collector" {
 
 
 resource "time_sleep" "wait_time_metrics_collected" {
-  count            = null_resource.start_collector !=null || null_resource.start_prometheus !=null ? 1 : 0
+  depends_on      = [null_resource.install_cwagent]
+  count           = null_resource.start_collector !=null || null_resource.start_prometheus !=null ? 1 : 0
   create_duration = "${var.collection_period}m"
 }
 
@@ -360,6 +364,7 @@ resource "null_resource" "install_cwagent" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y",
       local.cwagent_download_command,
       local.cwagent_install_command,
       local.cwagent_start_command,

@@ -9,7 +9,7 @@
     "append_dimensions": {
       "InstanceId": "$${aws:InstanceId}"
     },
-    "aggregation_dimensions": [["testcase", "data_rate", "testing_ami"]],
+    "aggregation_dimensions": [["testcase"]],
     "metrics_collected": {
       "procstat": [
         {

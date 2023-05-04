@@ -1,9 +1,5 @@
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
-  query_log_file: query.log
-  external_labels:
-    monitor: 'codelab-monitor'
+  scrape_interval: 1s
 
 # Remote write exporter link
 remote_write:
