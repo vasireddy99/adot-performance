@@ -35,4 +35,3 @@ service:
     metrics:
       level: detailed
       address: localhost:${port}
-      #    endpoint:  "http://:8080/put-data"

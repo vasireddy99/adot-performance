@@ -17,4 +17,3 @@ scrape_configs:
   - job_name: 'self-telemetry-prometheus'
     static_configs:
       - targets: ["localhost:9090"]
-# https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-f7c42266-8868-447b-bb23-f966919f1ce4/api/v1/remote_write
