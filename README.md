@@ -4,6 +4,12 @@ The Configuration files under `/config` directory are hardcoded to a specific AM
 
 Using the variables referred in [variables.tf](https://gitlab.aws.dev/adot/adot-performance/-/blob/main/variables.tf) file, arguments can be passed based on the use case. Variables such as `metric-load`, `label-count`, `series-interval` etc.,
 
+* Prerequisites:
+    *  aws credentials configured in terminal
+    * Terraform
+    * AMP Workspace
+    * Grafana Dashboard(To Visualize metrics from AMP)
+
 Example to run the ADOT collector 
 - `terraform apply --var=metric-load=5000 --var=collector=true -auto-approve`
 
