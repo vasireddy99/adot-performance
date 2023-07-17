@@ -88,7 +88,7 @@ data "aws_iam_policy_document" "policy" {
 }
 
 resource "aws_iam_policy" "policy" {
-  name        = "test-policy"
+  name        = "test-policy-logs-dev"
   description = "A test policy"
   policy      = data.aws_iam_policy_document.policy.json
 }
@@ -182,63 +182,5 @@ resource "aws_security_group" "adot-sg" {
   }
   tags = {
     Name = "adot-sg"
-  }
-}
-
-resource "aws_security_group" "adot-sg-sampleapp" {
-  vpc_id = "${aws_vpc.adot-vpc.id}"
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 9090
-    to_port = 9090
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 9999
-    to_port = 9999
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    Name = "adot-sg_sample_app"
-  }
-}
-
-resource "aws_security_group" "adot-sg-mock" {
-  vpc_id = "${aws_vpc.adot-vpc.id}"
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"        // This means, all ip address are allowed to ssh !
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 8080
-    to_port = 8080
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    Name = "adot-sg-mock"
   }
 }

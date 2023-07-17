@@ -6,6 +6,9 @@ Using the variables referred in [variables.tf](https://gitlab.aws.dev/adot/adot-
     * AWS credentials configured in terminal
     * Terraform
     * Building validator.go (located in logs-dev-scripts) binary using the following command: `GOOS=linux GOARCH=amd64 go build -o validator`
+    * Build the Collector RPM (put in the root directory) that has the File Log Receiver and CWL Exporter
+      * Option 1: Download from this [link](https://aws-otel-collector-test.s3.amazonaws.com/amazon_linux/amd64/v0.30.0-b98398c/aws-otel-collector.rpm)
+      * Option 2: Build it from the dev branch of the [aws-otel-collector repo](https://github.com/aws-observability/aws-otel-collector) by following these [instructions](https://aws-otel-collector-test.s3.amazonaws.com/amazon_linux/amd64/v0.30.0-b98398c/aws-otel-collector.rpm) 
 
 Example to run the ADOT collector 
 - `terraform apply --var=log_rate=100 --var=log_size_in_bytes=1000 --var=logging_duration_in_seconds=30 -auto-approve`

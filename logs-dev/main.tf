@@ -10,179 +10,18 @@ data "aws_ami" "amazonlinux2" {
   filter {
     name = "name"
     values = [
-    "amzn2-ami-kernel*"]
+      "amzn2-ami-kernel*"]
   }
 
   filter {
     name = "state"
     values = [
-    "available"]
+      "available"]
   }
 
   owners = [
-  "amazon"]
+    "amazon"]
 }
-
-resource "aws_instance" "adot-sample" {
-  count                       = var.instance_count
-  ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "m5.2xlarge"
-  associate_public_ip_address = true
-  key_name                    = local.ssh_key_name
-  subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
-  vpc_security_group_ids      = ["${aws_security_group.adot-sg-sampleapp.id}"]
-  iam_instance_profile        = aws_iam_instance_profile.aoc_test_profile.name
-  tags = {
-    Name      = "Sample-App"
-    ephemeral = "true"
-  }
-  metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-
-    # Use 2 hops because some of the test services run inside docker in the instance.
-    # That counts as an extra hop to access the IMDS. The default value is 1.
-    http_put_response_hop_limit = 2
-  }
-}
-
-data "template_file" "sample_app_docker_compose" {
-  template = file(var.sample_app_docker_compose_path)
-  vars = {
-    metric-count = var.metric-load
-    label-count  = var.label-count
-    series-count = var.series-count
-    port         =  var.port
-  }
-}
-
-
-resource "null_resource" "setup_sample_app" {
-  count           = var.instance_count
-  depends_on      = [ aws_instance.adot-sample ]
-  provisioner "file" {
-    content       = data.template_file.sample_app_docker_compose.rendered
-    destination   = "/tmp/docker-compose.yml"
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.adot-sample[count.index].public_ip
-    }
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "sudo amazon-linux-extras install docker -y",
-      "sudo service docker start",
-      "sudo usermod -a -G docker ec2-user",
-      "sudo curl -L 'https://github.com/docker/compose/releases/download/v2.17.1/docker-compose-Linux-x86_64' -o /usr/local/bin/docker-compose",
-      "sudo chmod +x /usr/local/bin/docker-compose",
-      "sudo `aws ecr get-login --no-include-email --region us-west-2`",
-      "sleep 30", // sleep 30s to wait until dockerd is totally set up
-      "sudo /usr/local/bin/docker-compose -f /tmp/docker-compose.yml up -d"
-    ]
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.adot-sample[count.index].public_ip
-    }
-  }
-}
-
-
-data "template_file" "mock_docker_compose" {
-  template = file(var.mock_docker_compose_path)
-}
-
-data "template_file" "set-py" {
-  template = file(var.set_py_path)
-}
-
-data "template_file" "mock-json" {
-  template = file(var.mock_json_path)
-}
-
-
-/*
-resource "aws_instance" "mock-server" {
-  ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "m5.2xlarge"
-  associate_public_ip_address = true
-  key_name                    = local.ssh_key_name
-  subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
-  vpc_security_group_ids      = ["${aws_security_group.adot-sg-mock.id}"]
-  iam_instance_profile        = aws_iam_instance_profile.aoc_test_profile.name
-  tags = {
-    Name      = "mock-server"
-    ephemeral = "true"
-  }
-  metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-
-    # Use 2 hops because some of the test services run inside docker in the instance.
-    # That counts as an extra hop to access the IMDS. The default value is 1.
-    http_put_response_hop_limit = 2
-  }
-}
-
-//mock server
-resource "null_resource" "setup_mock_server" {
-  count           = var.instance_count
-  depends_on    = [ aws_instance.adot-sample ]
-  provisioner "file" {
-    content     = data.template_file.mock_docker_compose.rendered
-    destination = "/tmp/mock-docker-compose.yml"
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.mock-server.public_ip
-    }
-  }
-  provisioner "file" {
-    content     = data.template_file.set-py.rendered
-    destination = "/tmp/set_python.py"
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.mock-server.public_ip
-    }
-  }
-  provisioner "file" {
-    content     = data.template_file.mock-json.rendered
-    destination = "/tmp/mock.json"
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.mock-server.public_ip
-    }
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "sudo amazon-linux-extras install docker -y",
-      "sudo service docker start",
-      "sudo usermod -a -G docker ec2-user",
-      "sudo curl -L 'https://github.com/docker/compose/releases/download/v2.17.1/docker-compose-Linux-x86_64' -o /usr/local/bin/docker-compose",
-      "sudo chmod +x /usr/local/bin/docker-compose",
-      "sudo `aws ecr get-login --no-include-email --region us-west-2`",
-      "sleep 30", // sleep 30s to wait until dockerd is totally set up
-      "sudo /usr/local/bin/docker-compose -f /tmp/mock-docker-compose.yml up -d"
-    ]
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.mock-server.public_ip
-    }
-  }
-}
-*/
 
 //Collector
 resource "aws_instance" "collection_agent" {
@@ -209,21 +48,10 @@ resource "aws_instance" "collection_agent" {
 data "template_file" "collector-config" {
   template = file(var.collector_config_path)
   vars = {
-//    mockServerPublicIP = aws_instance.mock-server.public_ip
-    region            =  var.region
-    port              = var.port
+    log_group = var.log_group
+    log_stream = var.log_stream
   }
 }
-
-data "template_file" "prometheus-config" {
-  template = file(var.prometheus_config_path)
-  vars = {
-//    mockServerPublicIP = aws_instance.mock-server.public_ip
-    region            =  var.region
-    port              = var.port
-  }
-}
-
 
 resource "null_resource" "download_collector_from_local" {
   depends_on = [aws_instance.collection_agent]
@@ -240,60 +68,21 @@ resource "null_resource" "download_collector_from_local" {
   }
 }
 
-
-resource "null_resource" "start_prometheus" {
-  count    = var.collector ? 0 : 1
-  # either getting the install package from s3 or from local
-  depends_on = [ null_resource.setup_sample_app]
-  provisioner "file" {
-    content     = data.template_file.prometheus-config.rendered
-    destination = "/tmp/prometheus.yml"
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.collection_agent.public_ip
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "cd /",
-      "sudo wget https://github.com/prometheus/prometheus/releases/download/v2.43.0/prometheus-2.43.0.linux-amd64.tar.gz",
-      "sudo tar xvfz prometheus-2.43.0.linux-amd64.tar.gz ",
-      "cd prometheus-2.43.0.linux-amd64",
-      "sudo touch query.log",
-      "sudo chmod 777 query.log",
-      "sudo ./prometheus --config.file=../tmp/prometheus.yml --enable-feature=agent --log.level=debug &",
-      "sleep 30"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = local.private_key_content
-      host        = aws_instance.collection_agent.public_ip
-    }
-  }
-}
-
 locals {
-    wait_cloud_init                    = "for i in {1..300}; do [ ! -f /var/lib/cloud/instance/boot-finished ] && echo 'Waiting for cloud-init...'$i && sleep 1 || break; done"
-    install_command                    = "sudo rpm -Uvh aws-otel-collector.rpm"
-    start_command                      = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c /tmp/ot-default.yml -a start"
-    cwagent_download_command           = "sudo rpm -Uvh --force https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-    cwagent_install_command            = "sudo yum install amazon-cloudwatch-agent"
-//    cwagent_install_command            =  "echo 'donothing'"
-    cwagent_start_command              = "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -s -m ec2 -c file:/tmp/cwagent-config.json"
-    launch_date                        = formatdate("YYYY-MM-DD", timestamp())
+  wait_cloud_init                    = "for i in {1..300}; do [ ! -f /var/lib/cloud/instance/boot-finished ] && echo 'Waiting for cloud-init...'$i && sleep 1 || break; done"
+  install_command                    = "sudo rpm -Uvh aws-otel-collector.rpm"
+  start_command                      = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c /tmp/ot-default.yml -a start"
+  restart_command = "sudo systemctl restart aws-otel-collector"
+  cwagent_download_command           = "sudo rpm -Uvh --force https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
+  cwagent_install_command            = "sudo yum install amazon-cloudwatch-agent"
+  cwagent_start_command              = "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -s -m ec2 -c file:/tmp/cwagent-config.json"
+  launch_date                        = formatdate("YYYY-MM-DD", timestamp())
 }
 
 resource "null_resource" "start_collector" {
   count    = var.collector ? 1 : 0
   # either getting the install package from s3 or from local
-  depends_on = [null_resource.download_collector_from_local, null_resource.setup_sample_app]
+  depends_on = [null_resource.download_collector_from_local]
   provisioner "file" {
     content     = data.template_file.collector-config.rendered
     destination = "/tmp/ot-default.yml"
@@ -312,6 +101,7 @@ resource "null_resource" "start_collector" {
       local.wait_cloud_init,
       local.install_command,
       local.start_command,
+      "sudo chmod +rwx /opt/aws/aws-otel-collector/etc/"
     ]
 
     connection {
@@ -323,13 +113,34 @@ resource "null_resource" "start_collector" {
   }
 }
 
+// Temporary resource to enable the feature gates
+resource "null_resource" "enable_featuregates" {
+  depends_on = [null_resource.start_collector]
+  provisioner "file" {
+    source = "logs-dev-scripts/.env"
+    destination = "/tmp/.env"
 
-resource "time_sleep" "wait_time_metrics_collected" {
-  depends_on      = [null_resource.install_cwagent]
-  count           = null_resource.start_collector !=null || null_resource.start_prometheus !=null ? 1 : 0
-  create_duration = "${var.collection_period}m"
+    connection {
+      type = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp /tmp/.env /opt/aws/aws-otel-collector/etc/.env",
+      local.restart_command
+    ]
+    connection {
+      type = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
 }
-
 
 ## install cwagent on the instance to collect metric from otel-collector
 data "template_file" "cwagent_config" {
@@ -348,7 +159,7 @@ data "template_file" "cwagent_config" {
 
 # install cwagent
 resource "null_resource" "install_cwagent" {
-  count            = null_resource.start_collector !=null || null_resource.start_prometheus !=null ? 1 : 0
+  count            = null_resource.start_collector !=null ? 1 : 0
   //  depends_on = [ time_sleep.wait_time_metrics_collected ]
   provisioner "file" {
     content     = data.template_file.cwagent_config.rendered
@@ -369,6 +180,68 @@ resource "null_resource" "install_cwagent" {
       local.cwagent_install_command,
       local.cwagent_start_command,
       "sleep 30"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
+}
+
+# Installs and runs the benchmark application in the same EC2 instance as the Collector
+resource "null_resource" "install_benchmark_application" {
+  depends_on = [null_resource.enable_featuregates]
+  provisioner "file" {
+    source = "logs-dev-scripts/logger.py"
+    destination = "/tmp/logger.py"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo python3 /tmp/logger.py --log-rate=${var.log_rate} --log-size-in-bytes=${var.log_size_in_bytes} --count=${var.logging_duration_in_seconds} --tail-file-path=${var.log_file_path}"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
+}
+
+# Installs and runs the validator in the same EC2 instance as the Collector
+resource "null_resource" "install_validator" {
+  depends_on = [null_resource.install_benchmark_application]
+  provisioner "file" {
+    source = "logs-dev-scripts/validator"
+    destination = "/tmp/validator"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = local.private_key_content
+      host        = aws_instance.collection_agent.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod +x /tmp/validator",
+      "export AWS_REGION=${var.region}",
+      "export CW_LOG_GROUP_NAME=${var.log_group}",
+      "export CW_LOG_STREAM_NAME=${var.log_stream}",
+      format("/tmp/validator %d", var.log_rate * var.logging_duration_in_seconds)
     ]
 
     connection {
