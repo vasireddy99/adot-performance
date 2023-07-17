@@ -1,0 +1,118 @@
+{
+  "MetricDataQueries": [
+    {
+      "Id": "avgCpuUsage",
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ADOT-Perf",
+          "MetricName": "procstat_cpu_usage",
+          "Dimensions": [
+            {
+              "Name": "data_rate",
+              "Value": "10000"
+            },
+            {
+              "Name": "testcase",
+              "Value": "Prometheus"
+            },
+            {
+              "Name": "testing_ami",
+              "Value": "ami-0c252bb9e6b71848e"
+            }
+          ]
+        },
+        "Period": 600,
+        "Stat": "Average",
+        "Unit": "Percent"
+      },
+      "Label": "avgCpuUsage",
+      "ReturnData": true
+    },
+    {
+      "Id": "maxCpuUsage",
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ADOT-Perf",
+          "MetricName": "procstat_cpu_usage",
+          "Dimensions": [
+            {
+              "Name": "data_rate",
+              "Value": "10000"
+            },
+            {
+              "Name": "testcase",
+              "Value": "Prometheus"
+            },
+            {
+              "Name": "testing_ami",
+              "Value": "ami-0c252bb9e6b71848e"
+            }
+          ]
+        },
+        "Period": 600,
+        "Stat": "Maximum",
+        "Unit": "Percent"
+      },
+      "Label": "maxCpuUsage",
+      "ReturnData": true
+    },
+    {
+      "Id": "maxMemUsage",
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ADOT-Perf",
+          "MetricName": "procstat_memory_rss",
+          "Dimensions": [
+            {
+              "Name": "data_rate",
+              "Value": "10000"
+            },
+            {
+              "Name": "testcase",
+              "Value": "Prometheus"
+            },
+            {
+              "Name": "testing_ami",
+              "Value": "ami-0c252bb9e6b71848e"
+            }
+          ]
+        },
+        "Period": 600,
+        "Stat": "Maximum",
+        "Unit": "Bytes"
+      },
+      "Label": "maxMemUsage",
+      "ReturnData": true
+    },
+    {
+      "Id": "avgMemUsage",
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ADOT-Perf",
+          "MetricName": "procstat_memory_rss",
+          "Dimensions": [
+            {
+              "Name": "data_rate",
+              "Value": "10000"
+            },
+            {
+              "Name": "testcase",
+              "Value": "Prometheus"
+            },
+            {
+              "Name": "testing_ami",
+              "Value": "ami-0c252bb9e6b71848e"
+            }
+          ]
+        },
+        "Period": 600,
+        "Stat": "Average",
+        "Unit": "Bytes"
+      },
+      "Label": "avgMemUsage",
+      "ReturnData": true
+    }
+  ],
+  "StartTime": "2023-04-10T18:49:44Z",
+  "EndTime": "2023-04-10T18:59:44Z"
+}
