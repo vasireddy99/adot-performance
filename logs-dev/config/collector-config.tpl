@@ -1,37 +1,31 @@
-extensions:
-  sigv4auth:
-    region: "us-west-2"
 receivers:
+  filelog:
+    include: [/*.log]
+    encoding: "ascii"
   prometheus:
     config:
-      global:
-        scrape_interval: 1s
       scrape_configs:
-      - job_name: "ec2-collector-performance"
-        ec2_sd_configs:
-          - region: ${region}
-            port: ${port}
-      - job_name: "self-collector-performance"
-        scrape_interval: 5s
-        static_configs:
-          - targets: [localhost:${port}]
-processors:
-  batch:
+        - job_name: 'collector-monitoring'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['localhost:8888']
 exporters:
-  prometheusremotewrite:
-    endpoint: "https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-4c399252-f488-42dd-a500-3f0b6c09b2ab/api/v1/remote_write"
-    auth:
-      authenticator: sigv4auth
+  awscloudwatchlogs:
+    log_group_name: "${log_group}"
+    log_stream_name: "${log_stream}"
+  awsemf:
+    log_group_name: "emf-metrics-log-group"
+    log_stream_name: "emf-metrics-log-stream"
 service:
   pipelines:
+    logs:
+     receivers: [filelog]
+     exporters: [awscloudwatchlogs]
     metrics:
      receivers: [prometheus]
-     processors: [batch]
-     exporters: [prometheusremotewrite]
-  extensions: [sigv4auth]
+     exporters: [awsemf]
   telemetry:
     logs:
       level: debug
     metrics:
       level: detailed
-      address: localhost:${port}

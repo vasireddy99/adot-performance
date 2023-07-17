@@ -22,28 +22,8 @@ variable "debug" {
   default = true
 }
 
-variable "set_py_path" {
-  default = "mocks/setup-python.tpl"
-}
-
-variable "mock_json_path" {
-  default = "mocks/user-mocks.tpl"
-}
-
-variable "mock_docker_compose_path" {
-  default = "docker-compose/mock-server-docker-compose.tpl"
-}
-
-variable "sample_app_docker_compose_path" {
-  default = "docker-compose/sample-app-docker-compose.tpl"
-}
-
 variable "collector_config_path" {
   default = "config/collector-config.tpl"
-}
-
-variable "prometheus_config_path" {
-  default = "config/prometheus-config.tpl"
 }
 
 variable "install_package_local_path" {
@@ -84,4 +64,30 @@ variable "process_name" {
 
 variable "port" {
   default = 9090
+}
+
+// Benchmark Application (logger.py) configurations
+variable "log_rate" {
+  default = 10
+}
+
+variable "log_size_in_bytes" {
+  default = 10
+}
+
+variable "logging_duration_in_seconds" {
+  default = 10
+}
+
+variable "log_file_path" {
+  default = "/test.log"
+}
+
+// CloudWatch Logs Exporter Configurations
+variable "log_group" {
+  default = "test-log-group"
+}
+
+variable "log_stream" {
+  default = "test-log-stream"
 }
