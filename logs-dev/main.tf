@@ -44,12 +44,24 @@ resource "aws_instance" "collection_agent" {
   }
 }
 
+# Create Log Group beforehand (so they can be deleted once "terraform destroy" is called
+# Log Groups are in this format: testcase-<log rate>-<log size>-log-group (ex: testcase-100-1000-log-group)
+resource "aws_cloudwatch_log_group" "testcase-log-group" {
+  name = "testcase-${var.log_rate}-${var.log_size_in_bytes}-log-group"
+}
+
+# Create Log Stream that's part of the Log Group above
+# Log Streams are in this format: testcase-<log rate>-<log size>-log-stream (ex: testcase-100-1000-log-stream)
+resource "aws_cloudwatch_log_stream" "testcase-log-stream" {
+  name           = "testcase-${var.log_rate}-${var.log_size_in_bytes}-log-stream"
+  log_group_name = aws_cloudwatch_log_group.testcase-log-group.name
+}
 
 data "template_file" "collector-config" {
   template = file(var.collector_config_path)
   vars = {
-    log_group = var.log_group
-    log_stream = var.log_stream
+    log_group = aws_cloudwatch_log_group.testcase-log-group.name
+    log_stream = aws_cloudwatch_log_stream.testcase-log-stream.name
   }
 }
 
@@ -82,7 +94,7 @@ locals {
 resource "null_resource" "start_collector" {
   count    = var.collector ? 1 : 0
   # either getting the install package from s3 or from local
-  depends_on = [null_resource.download_collector_from_local]
+  depends_on = [null_resource.download_collector_from_local, aws_cloudwatch_log_group.testcase-log-group, aws_cloudwatch_log_stream.testcase-log-stream]
   provisioner "file" {
     content     = data.template_file.collector-config.rendered
     destination = "/tmp/ot-default.yml"
@@ -239,8 +251,8 @@ resource "null_resource" "install_validator" {
     inline = [
       "sudo chmod +x /tmp/validator",
       "export AWS_REGION=${var.region}",
-      "export CW_LOG_GROUP_NAME=${var.log_group}",
-      "export CW_LOG_STREAM_NAME=${var.log_stream}",
+      "export CW_LOG_GROUP_NAME=${aws_cloudwatch_log_group.testcase-log-group.name}",
+      "export CW_LOG_STREAM_NAME=${aws_cloudwatch_log_stream.testcase-log-stream.name}",
       format("/tmp/validator %d", var.log_rate * var.logging_duration_in_seconds)
     ]
 

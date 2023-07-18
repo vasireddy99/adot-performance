@@ -30,7 +30,6 @@ def _log_error_and_sleep(err, sleep_seconds):
 def _random_string(size, chars=None):
     """"""
     random.seed(time.time())
-    print(time.time())
     return ''.join(random.choice(_DEFAULT_CHARS) for _ in range(size))
 
 

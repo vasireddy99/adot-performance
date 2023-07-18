@@ -82,12 +82,3 @@ variable "logging_duration_in_seconds" {
 variable "log_file_path" {
   default = "/test.log"
 }
-
-// CloudWatch Logs Exporter Configurations
-variable "log_group" {
-  default = "test-log-group"
-}
-
-variable "log_stream" {
-  default = "test-log-stream"
-}
