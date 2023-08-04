@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	json "encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -116,7 +116,7 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 				time.Sleep(1 * time.Second)
 				response, err = cwClient.GetLogEvents(input)
 			} else {
-				exitErrorf("[TEST FAILURE] Error occured to get the log events from log group: %q., %v", logGroup, err)
+				exitErrorf("[TEST FAILURE] Error occurred to get the log events from log group: %q., %v", logGroup, err)
 			}
 		}
 
@@ -146,26 +146,29 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 	return cwRecordCounter, inputMap
 }
 
+type ValidatorResults struct {
+	TotalInputRecord     int
+	TotalRecordFound     int
+	UniqueRecordFound    int
+	DuplicateRecordFound int
+	PercentLoss          int
+	MissingRecordFound   int
+}
+
 func get_results(totalInputRecord int, totalRecordFound int, recordMap map[string]bool) {
-	uniqueRecordFound := 0
 	// Count how many unique records were found in the destination
-	for _, v := range recordMap {
-		if v {
-			uniqueRecordFound++
-		}
+	uniqueRecordFound := len(recordMap)
+	results := &ValidatorResults{TotalInputRecord: totalInputRecord,
+		TotalRecordFound:     totalRecordFound,
+		UniqueRecordFound:    uniqueRecordFound,
+		DuplicateRecordFound: totalRecordFound - uniqueRecordFound,
+		PercentLoss:          (totalInputRecord - uniqueRecordFound) * 100 / totalInputRecord,
+		MissingRecordFound:   totalInputRecord - uniqueRecordFound}
+	jsonResults, err := json.Marshal(results)
+	if err != nil {
+		exitErrorf("Failure marshalling results to json: %s", err.Error())
 	}
-
-	fmt.Println("total_input, ", totalInputRecord)
-	fmt.Println("total_destination, ", totalRecordFound)
-	fmt.Println("unique, ", uniqueRecordFound)
-	fmt.Println("duplicate, ", totalRecordFound-uniqueRecordFound)
-	fmt.Println("percent_loss, ", (totalInputRecord-uniqueRecordFound)*100/totalInputRecord) // %
-
-	if totalInputRecord != uniqueRecordFound {
-		fmt.Println("missing, ", totalInputRecord-uniqueRecordFound)
-	} else {
-		fmt.Println("missing, ", 0)
-	}
+	fmt.Println(string(jsonResults))
 }
 
 func exitErrorf(msg string, args ...interface{}) {

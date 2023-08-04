@@ -1,14 +1,13 @@
 import argparse
 import concurrent.futures
 import io
-import os
-import json
 import logging
 import random
 import sched
 import string
 import sys
 import time
+import uuid
 
 logging.basicConfig(
     level=logging.DEBUG, stream=sys.stderr,
@@ -29,7 +28,6 @@ def _log_error_and_sleep(err, sleep_seconds):
 
 def _random_string(size, chars=None):
     """"""
-    random.seed(time.time())
     return ''.join(random.choice(_DEFAULT_CHARS) for _ in range(size))
 
 
@@ -74,9 +72,11 @@ class LogGenerator(object):
 
     def _construct_full_log_message(self):
         """"""
-        self._log_record = _construct_log_record(self._log_size_in_bytes)
+        curr_time = time.time()
+        # The timestamp is not included in the log record size.
+        self._log_record = _construct_log_record(self._log_size_in_bytes - len(str(curr_time)))
         return '{timestamp} {log_record}'.format(
-            timestamp=time.time(),
+            timestamp=curr_time,
             log_record=self._log_record)
 
     def send_logs(self):
@@ -87,8 +87,7 @@ class LogGenerator(object):
                 self._log_agent_input.send_message(
                     self._construct_full_log_message())
         end_time = time.time()
-        logger.info('Successfully sent this log message %d times:\n%s.',
-                    self._log_rate, self._log_record)
+        logger.info('Successfully sent log messages %d times.\n',self.log_rate)
 
         if end_time > start_time + 1:
             logger.error(
@@ -163,7 +162,7 @@ parser.add_argument(
 
 
 def main():
-    random.seed(a=1, version=2)
+    random.seed(uuid.uuid4().bytes)
     args = parser.parse_args()
     logger.info('Parsed args: %s', args)
     futures = []
