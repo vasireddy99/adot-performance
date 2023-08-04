@@ -1,0 +1,4 @@
+.idea/aws.xml
+.idea/adot-performance.iml
+logs-dev/aws-otel-collector.rpm
+logs-dev/logs-dev-scripts/validator
