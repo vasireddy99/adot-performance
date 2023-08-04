@@ -232,11 +232,9 @@ resource "null_resource" "install_benchmark_application" {
   }
 }
 
-# Installs and runs the validator in the same EC2 instance as the Collector
 resource "null_resource" "install_validator" {
-  depends_on = [null_resource.install_benchmark_application]
   provisioner "file" {
-    source = "logs-dev-scripts/validator"
+    source      = "logs-dev-scripts/validator"
     destination = "/tmp/validator"
 
     connection {
@@ -253,16 +251,27 @@ resource "null_resource" "install_validator" {
       "export AWS_REGION=${var.region}",
       "export CW_LOG_GROUP_NAME=${aws_cloudwatch_log_group.testcase-log-group.name}",
       "export CW_LOG_STREAM_NAME=${aws_cloudwatch_log_stream.testcase-log-stream.name}",
-      format("/tmp/validator %d", var.log_rate * var.logging_duration_in_seconds)
+      format("/tmp/validator %d > /tmp/validator_results.json", var.log_rate * var.logging_duration_in_seconds)
     ]
 
     connection {
-      type        = "ssh"
-      user        = "ec2-user"
+      type = "ssh"
+      user = "ec2-user"
       private_key = local.private_key_content
       host        = aws_instance.collection_agent.public_ip
     }
   }
+}
+
+data "remote_file" "validator_results" {
+  depends_on = [null_resource.install_validator]
+  conn {
+    user        = "ec2-user"
+    private_key = local.private_key_content
+    host        = aws_instance.collection_agent.public_ip
+  }
+
+  path = "/tmp/validator_results.json"
 }
 
 resource "aws_cloudwatch_dashboard" "cloudwatch_metrics" {
