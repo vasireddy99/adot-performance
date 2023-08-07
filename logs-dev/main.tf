@@ -62,6 +62,9 @@ data "template_file" "collector-config" {
   vars = {
     log_group = aws_cloudwatch_log_group.testcase-log-group.name
     log_stream = aws_cloudwatch_log_stream.testcase-log-stream.name
+    send_batch_size = var.send_batch_size
+    batch_timeout = var.batch_timeout
+    max_batch_size = var.max_batch_size
   }
 }
 
@@ -172,7 +175,6 @@ data "template_file" "cwagent_config" {
 # install cwagent
 resource "null_resource" "install_cwagent" {
   count            = null_resource.start_collector !=null ? 1 : 0
-  //  depends_on = [ time_sleep.wait_time_metrics_collected ]
   provisioner "file" {
     content     = data.template_file.cwagent_config.rendered
     destination = "/tmp/cwagent-config.json"
@@ -203,9 +205,23 @@ resource "null_resource" "install_cwagent" {
   }
 }
 
+resource "time_static" "start_test_with_pre_test_delay" {
+  depends_on = [null_resource.install_cwagent]
+}
+
+resource "time_sleep" "pre_test_delay" {
+  depends_on = [null_resource.enable_featuregates, null_resource.install_cwagent]
+  count = 1
+  create_duration = "${var.pre_test_delay_in_seconds}s"
+}
+
+resource "time_static" "start_test" {
+  depends_on = [time_sleep.pre_test_delay]
+}
+
 # Installs and runs the benchmark application in the same EC2 instance as the Collector
 resource "null_resource" "install_benchmark_application" {
-  depends_on = [null_resource.enable_featuregates]
+  depends_on = [null_resource.enable_featuregates, time_sleep.pre_test_delay]
   provisioner "file" {
     source = "logs-dev-scripts/logger.py"
     destination = "/tmp/logger.py"
@@ -232,7 +248,29 @@ resource "null_resource" "install_benchmark_application" {
   }
 }
 
+resource "time_static" "end_test" {
+  depends_on = [null_resource.install_benchmark_application]
+}
+
+# Will capture metrics during the post-test delay
+resource "time_sleep" "post_test_delay" {
+  depends_on = [null_resource.install_benchmark_application]
+  count = 1
+  create_duration = "${var.post_test_delay_in_seconds}s"
+}
+
+resource "time_static" "end_test_with_post_test_delay" {
+  depends_on = [time_sleep.post_test_delay]
+}
+
+resource "time_sleep" "delay_for_capturing_metrics_and_getting_logs" {
+  depends_on = [time_sleep.post_test_delay]
+  count = 1
+  create_duration = "1m"
+}
+
 resource "null_resource" "install_validator" {
+  depends_on = [time_sleep.delay_for_capturing_metrics_and_getting_logs]
   provisioner "file" {
     source      = "logs-dev-scripts/validator"
     destination = "/tmp/validator"
