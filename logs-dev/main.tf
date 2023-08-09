@@ -94,7 +94,7 @@ locals {
   start_command                      = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c /tmp/ot-default.yml -a start"
   restart_command = "sudo systemctl restart aws-otel-collector"
   cwagent_download_command           = "sudo rpm -Uvh --force https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-  cwagent_install_command            = "sudo yum install -y amazon-cloudwatch-agent"
+  cwagent_install_command            = "sudo yum -y install amazon-cloudwatch-agent"
   cwagent_start_command              = "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -s -m ec2 -c file:/tmp/cwagent-config.json"
   launch_date                        = formatdate("YYYY-MM-DD", timestamp())
 }
