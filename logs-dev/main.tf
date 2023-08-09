@@ -320,347 +320,293 @@ data "remote_file" "validator_results" {
 }
 
 locals {
-  cpu_utilization_per_process_json = jsonencode({
-    "metrics": [
-      [ "ADOT-Perf", "procstat_cpu_usage",
-        "exe", "aws-otel-collector",
-        "InstanceId", aws_instance.collection_agent.id,
-        "process_name", "aws-otel-collector",
-        "launch_date", local.launch_date,
-        "instance_type", aws_instance.collection_agent.instance_type,
-        "testcase", "ADOT"
-      ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "title": "Average CPU Utilization per Process of ADOT Collector",
-    "period": 5,
-  })
-
-  cpu_utilization_per_process_max_json = jsonencode({
-    "metrics": [
-      [ "ADOT-Perf", "procstat_cpu_usage",
-        "exe", "aws-otel-collector",
-        "InstanceId", aws_instance.collection_agent.id,
-        "process_name", "aws-otel-collector",
-        "launch_date", local.launch_date,
-        "instance_type", aws_instance.collection_agent.instance_type,
-        "testcase", "ADOT"
-      ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "stat": "Maximum",
-    "title": "Maximum CPU Utilization per Process of ADOT Collector",
-    "period": 5,
-  })
-
-  //EC2 Instance Data
-  ec2_cpu_utilization_json = jsonencode({
-    "metrics": [
-      [ "AWS/EC2", "CPUUtilization",
-        "InstanceId", aws_instance.collection_agent.id ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "title": "EC2 Instance Average CPU Utilization",
-    "period": 5,
-  })
-
-  ec2_cpu_utilization_max_json = jsonencode({
-    "metrics": [
-      [ "AWS/EC2", "CPUUtilization",
-        "InstanceId", aws_instance.collection_agent.id ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "stat": "Maximum",
-    "title": "EC2 Instance Maximum CPU Utilization",
-    "period": 5,
-  })
-
-  //Self-Telemetry Data
-  memory_usage_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_process_memory_rss",
-        "instance_id", aws_instance.collection_agent.id,
-        "OTelLib", "otelcol/prometheusreceiver" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "title": "Memory Usage of ADOT Collector",
-    "period": 5,
-  })
-
-  heap_size_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_process_runtime_heap_alloc_bytes",
-        "instance_id", aws_instance.collection_agent.id,
-        "OTelLib", "otelcol/prometheusreceiver" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "title": "Heap Allocation of ADOT Collector",
-    "period": 5,
-  })
-
-  queue_size_cwl_exporter_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_exporter_queue_size",
-        "instance_id", aws_instance.collection_agent.id,
-        "exporter", "awscloudwatchlogs",
-        "service_version", "v0.30.0" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "title": "Queue Size of CWL Exporter",
-    "period": 5,
-  })
-
-  accepted_log_records_filelog_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_receiver_accepted_log_records",
-        "instance_id", aws_instance.collection_agent.id,
-        "receiver", "filelog",
-        "service_version", "v0.30.0" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "stat": "Sum",
-    "title": "Accepted Log Records of File Log Receiver",
-    "period": 5,
-  })
-
-  rejected_log_records_filelog_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_receiver_rejected_log_records",
-        "instance_id", aws_instance.collection_agent.id,
-        "receiver", "filelog",
-        "service_version", "v0.30.0" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "stat": "Sum",
-    "title": "Rejected Log Records of File Log Receiver",
-    "period": 5,
-  })
-
-  log_records_sent_cwl_exporter_json = jsonencode({
-    "metrics": [
-      [ "collector-monitoring", "otelcol_exporter_sent_log_records",
-        "instance_id", aws_instance.collection_agent.id,
-        "exporter", "awscloudwatchlogs",
-        "service_version", "v0.30.0" ]
-    ],
-    "annotations": {
-      "vertical": [
-        {
-          "visible": true,
-          "color": "#00F00A",
-          "label": "Test start",
-          "value": time_static.start_test.rfc3339
-        },
-        {
-          "value": time_static.end_test.rfc3339,
-          "label": "Test end"
-        }
-      ]
-    },
-    "start": time_static.start_test_with_pre_test_delay.rfc3339,
-    "end": time_static.end_test_with_post_test_delay.rfc3339,
-    "stat": "Sum",
-    "title": "Log Records Sent by CWL Exporter",
-    "period": 5,
-  })
-}
-
-locals {
   snapshots_directory = "snapshots/"
   extension = "-testcase-${var.log_rate}-${var.log_size_in_bytes}.png"
 
-  avg_cpu_image_name = "avg_cpu_utilization${local.extension}"
-  max_cpu_image_name = "max_cpu_utilization${local.extension}"
-  avg_ec2_cpu_image_name = "avg_ec2_cpu_utilization${local.extension}"
-  max_ec2_cpu_image_name = "max_ec2_cpu_utilization${local.extension}"
-  memory_usage_image_name = "memory_usage${local.extension}"
-  heap_size_image_name = "heap_size${local.extension}"
-  queue_size_image_name = "queue_size${local.extension}"
-  accepted_logs_image_name = "accepted_logs_filelog${local.extension}"
-  rejected_logs_image_name = "rejected_logs_filelog${local.extension}"
-  sent_logs_cwl_exporter_image_name = "sent_logs_cwl_exporter${local.extension}"
+  image_names_and_json = {
+    "avg_cpu_utilization" = jsonencode({
+      "metrics": [
+        [ "ADOT-Perf", "procstat_cpu_usage",
+          "exe", "aws-otel-collector",
+          "InstanceId", aws_instance.collection_agent.id,
+          "process_name", "aws-otel-collector",
+          "launch_date", local.launch_date,
+          "instance_type", aws_instance.collection_agent.instance_type,
+          "testcase", "ADOT"
+        ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "title": "Average CPU Utilization per Process of ADOT Collector",
+      "period": 5,
+    }),
+
+    "max_cpu_utilization" = jsonencode({
+      "metrics": [
+        [ "ADOT-Perf", "procstat_cpu_usage",
+          "exe", "aws-otel-collector",
+          "InstanceId", aws_instance.collection_agent.id,
+          "process_name", "aws-otel-collector",
+          "launch_date", local.launch_date,
+          "instance_type", aws_instance.collection_agent.instance_type,
+          "testcase", "ADOT"
+        ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "stat": "Maximum",
+      "title": "Maximum CPU Utilization per Process of ADOT Collector",
+      "period": 5,
+    }),
+    "avg_ec2_cpu_utilization" = jsonencode({
+      "metrics": [
+        [ "AWS/EC2", "CPUUtilization",
+          "InstanceId", aws_instance.collection_agent.id ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "title": "EC2 Instance Average CPU Utilization",
+      "period": 5,
+    }),
+    "max_ec2_cpu_utilization" = jsonencode({
+      "metrics": [
+        [ "AWS/EC2", "CPUUtilization",
+          "InstanceId", aws_instance.collection_agent.id ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "stat": "Maximum",
+      "title": "EC2 Instance Maximum CPU Utilization",
+      "period": 5,
+    }),
+    "memory_usage" =     jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_process_memory_rss",
+          "instance_id", aws_instance.collection_agent.id,
+          "OTelLib", "otelcol/prometheusreceiver" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "title": "Memory Usage of ADOT Collector",
+      "period": 5,
+    }),
+    "heap_size" = jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_process_runtime_heap_alloc_bytes",
+          "instance_id", aws_instance.collection_agent.id,
+          "OTelLib", "otelcol/prometheusreceiver" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "title": "Heap Allocation of ADOT Collector",
+      "period": 5,
+    }),
+    "queue_size" = jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_exporter_queue_size",
+          "instance_id", aws_instance.collection_agent.id,
+          "exporter", "awscloudwatchlogs",
+          "service_version", "v0.30.0" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "title": "Queue Size of CWL Exporter",
+      "period": 5,
+    }),
+    "accepted_logs_filelog" =    jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_receiver_accepted_log_records",
+          "instance_id", aws_instance.collection_agent.id,
+          "receiver", "filelog",
+          "service_version", "v0.30.0" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "stat": "Sum",
+      "title": "Accepted Log Records of File Log Receiver",
+      "period": 5,
+    }),
+    "rejected_logs_filelog" = jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_receiver_rejected_log_records",
+          "instance_id", aws_instance.collection_agent.id,
+          "receiver", "filelog",
+          "service_version", "v0.30.0" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "stat": "Sum",
+      "title": "Rejected Log Records of File Log Receiver",
+      "period": 5,
+    }),
+    "sent_logs_cwl_exporter" = jsonencode({
+      "metrics": [
+        [ "collector-monitoring", "otelcol_exporter_sent_log_records",
+          "instance_id", aws_instance.collection_agent.id,
+          "exporter", "awscloudwatchlogs",
+          "service_version", "v0.30.0" ]
+      ],
+      "annotations": {
+        "vertical": [
+          {
+            "visible": true,
+            "color": "#00F00A",
+            "label": "Test start",
+            "value": time_static.start_test.rfc3339
+          },
+          {
+            "value": time_static.end_test.rfc3339,
+            "label": "Test end"
+          }
+        ]
+      },
+      "start": time_static.start_test_with_pre_test_delay.rfc3339,
+      "end": time_static.end_test_with_post_test_delay.rfc3339,
+      "stat": "Sum",
+      "title": "Log Records Sent by CWL Exporter",
+      "period": 5,
+    })
+  }
 }
 
 resource "null_resource" "add_metric_snapshots" {
   depends_on = [time_sleep.delay_for_capturing_metrics_and_getting_logs]
+  // Key is the image name
+  // Value is the json
+  for_each = local.image_names_and_json
   provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.cpu_utilization_per_process_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.avg_cpu_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.cpu_utilization_per_process_max_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.max_cpu_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.ec2_cpu_utilization_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.avg_ec2_cpu_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.ec2_cpu_utilization_max_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.max_ec2_cpu_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.memory_usage_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.memory_usage_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.heap_size_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.heap_size_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.queue_size_cwl_exporter_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.queue_size_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.accepted_log_records_filelog_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.accepted_logs_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.rejected_log_records_filelog_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.rejected_logs_image_name}"
-  }
-
-  provisioner "local-exec" {
-    command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.log_records_sent_cwl_exporter_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.sent_logs_cwl_exporter_image_name}"
+    command = "aws cloudwatch get-metric-widget-image --metric-widget '${each.value}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${each.key}${local.extension}"
   }
 }
 
 locals {
-  page_to_publish_to = "AWS/AWS_Distro_for_OpenTelemetry/internal/logs/loadtests/testcase-${var.log_rate}-${var.log_size_in_bytes}"
+  page_to_publish_to = "AWS/AWS_Distro_for_OpenTelemetry/internal/logs/loadtests/testcase-${var.log_rate}-${var.log_size_in_bytes}-test"
   validator_results = jsondecode(data.remote_file.validator_results.content)
   wiki_page = templatefile("wiki_page.tpl", {
     log_rate = var.log_rate
@@ -676,38 +622,16 @@ locals {
   wiki_page_string = tostring(local.wiki_page)
 }
 
-// Note: Specify in readme that they need to install RustyAmazonWiki (toolbox install raw)
-resource "null_resource" "publish_to_wiki" {
+resource "null_resource" "publish_images_to_wiki" {
+  depends_on = [null_resource.add_metric_snapshots]
+  for_each = local.image_names_and_json
   provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.avg_cpu_image_name} < ${local.snapshots_directory}${local.avg_cpu_image_name}"
+    command = "raw attachment ${local.page_to_publish_to} upload ${each.key} < ${local.snapshots_directory}${each.key}${local.extension}"
   }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.max_cpu_image_name} < ${local.snapshots_directory}${local.max_cpu_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.avg_ec2_cpu_image_name} < ${local.snapshots_directory}${local.avg_ec2_cpu_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.max_ec2_cpu_image_name} < ${local.snapshots_directory}${local.max_ec2_cpu_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.memory_usage_image_name} < ${local.snapshots_directory}${local.memory_usage_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.heap_size_image_name} < ${local.snapshots_directory}${local.heap_size_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.queue_size_image_name} < ${local.snapshots_directory}${local.queue_size_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.accepted_logs_image_name} < ${local.snapshots_directory}${local.accepted_logs_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.rejected_logs_image_name} < ${local.snapshots_directory}${local.rejected_logs_image_name}"
-  }
-  provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${local.sent_logs_cwl_exporter_image_name} < ${local.snapshots_directory}${local.sent_logs_cwl_exporter_image_name}"
-  }
+}
+
+resource "null_resource" "publish_xwiki_file_to_wiki" {
+  depends_on = [null_resource.publish_images_to_wiki]
   provisioner "local-exec" {
     command = "echo \"${local.wiki_page_string}\" > wiki_page.xwiki"
   }
