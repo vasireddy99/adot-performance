@@ -91,6 +91,10 @@ variable "post_test_delay_in_seconds" {
   default = 300
 }
 
+variable "concurrent_processes_benchmark_app" {
+  default = 3
+}
+
 variable "send_batch_size" {
   default = 10000
 }

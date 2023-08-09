@@ -241,7 +241,7 @@ resource "null_resource" "install_benchmark_application" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo python3 /tmp/logger.py --log-rate=${var.log_rate} --log-size-in-bytes=${var.log_size_in_bytes} --count=${var.logging_duration_in_seconds} --tail-file-path=${var.log_file_path}"
+      "sudo python3 /tmp/logger.py --log-rate=${var.log_rate} --log-size-in-bytes=${var.log_size_in_bytes} --count=${var.logging_duration_in_seconds} --tail-file-path=${var.log_file_path} --processes=${var.concurrent_processes_benchmark_app}"
     ]
 
     connection {
