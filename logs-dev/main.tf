@@ -30,7 +30,7 @@ data "aws_ami" "amazonlinux2" {
 //Collector
 resource "aws_instance" "collection_agent" {
   ami                         = data.aws_ami.amazonlinux2.id
-  instance_type               = "m5.2xlarge"
+  instance_type               = "c5.9xlarge"
   associate_public_ip_address = true
   subnet_id                   = "${aws_subnet.adot-subnet-public-1.id}"
   vpc_security_group_ids      = ["${aws_security_group.adot-sg.id}"]
@@ -66,6 +66,7 @@ data "template_file" "collector-config" {
   vars = {
     log_group = aws_cloudwatch_log_group.testcase-log-group.name
     log_stream = aws_cloudwatch_log_stream.testcase-log-stream.name
+    instance_id = aws_instance.collection_agent.id
     send_batch_size = var.send_batch_size
     batch_timeout = var.batch_timeout
     max_batch_size = var.max_batch_size
@@ -93,7 +94,7 @@ locals {
   start_command                      = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c /tmp/ot-default.yml -a start"
   restart_command = "sudo systemctl restart aws-otel-collector"
   cwagent_download_command           = "sudo rpm -Uvh --force https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-  cwagent_install_command            = "sudo yum install amazon-cloudwatch-agent"
+  cwagent_install_command            = "sudo yum install -y amazon-cloudwatch-agent"
   cwagent_start_command              = "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -s -m ec2 -c file:/tmp/cwagent-config.json"
   launch_date                        = formatdate("YYYY-MM-DD", timestamp())
 }
