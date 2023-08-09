@@ -274,6 +274,8 @@ resource "time_sleep" "delay_for_capturing_metrics_and_getting_logs" {
   create_duration = "1m"
 }
 
+# Installs and runs the validator in the same EC2 instance as the Collector
+# Validator's execution should be delayed in order to accurately get log loss and log duplication
 resource "null_resource" "install_validator" {
   depends_on = [time_sleep.delay_for_capturing_metrics_and_getting_logs]
   provisioner "file" {
@@ -318,15 +320,6 @@ data "remote_file" "validator_results" {
 }
 
 locals {
-  /*cpu_utilization_per_process_json = templatefile("snapshot_json.tftpl",{
-      test_start_time = jsonencode(time_static.start_test.rfc3339)
-      test_end_time = jsonencode(time_static.end_test.rfc3339)
-      before_test_time = jsonencode(time_static.start_test_with_pre_test_delay.rfc3339)
-      after_test_time = jsonencode(time_static.end_test_with_post_test_delay.rfc3339)
-      metrics = jsonencode([["ADOT-Perf", "procstat_cpu_usage", "exe", "aws-otel-collector", "InstanceId", jsonencode(aws_instance.collection_agent.id), "process_name", "aws-otel-collector", "launch_date", jsonencode(local.launch_date), "instance_type", jsonencode(aws_instance.collection_agent.instance_type), "testcase", "ADOT"]])
-      title = jsonencode("Average CPU Utilization per Process of ADOT Collector")
-      stat = jsonencode("Average")
-    })*/
   cpu_utilization_per_process_json = jsonencode({
     "metrics": [
       [ "ADOT-Perf", "procstat_cpu_usage",
@@ -663,5 +656,63 @@ resource "null_resource" "add_metric_snapshots" {
 
   provisioner "local-exec" {
     command = "aws cloudwatch get-metric-widget-image --metric-widget '${local.log_records_sent_cwl_exporter_json}' --region ${var.region} | grep MetricWidgetImage | awk '{split($0,a,\"\\\"\"); print a[4]}' | base64 --decode > ${local.snapshots_directory}${local.sent_logs_cwl_exporter_image_name}"
+  }
+}
+
+locals {
+  page_to_publish_to = "AWS/AWS_Distro_for_OpenTelemetry/internal/logs/loadtests/testcase-${var.log_rate}-${var.log_size_in_bytes}"
+  validator_results = jsondecode(data.remote_file.validator_results.content)
+  wiki_page = templatefile("wiki_page.tpl", {
+    log_rate = var.log_rate
+    log_size = var.log_size_in_bytes
+    duration = var.logging_duration_in_seconds
+    date = formatdate("MMM DD, YYYY", timestamp())
+    testcase_extension = "testcase-${var.log_rate}-${var.log_size_in_bytes}.png"
+    send_batch_size = var.send_batch_size
+    batch_timeout = var.batch_timeout
+    max_batch_size = var.max_batch_size
+    validator_results = local.validator_results
+  })
+  wiki_page_string = tostring(local.wiki_page)
+}
+
+// Note: Specify in readme that they need to install RustyAmazonWiki (toolbox install raw)
+resource "null_resource" "publish_to_wiki" {
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.avg_cpu_image_name} < ${local.snapshots_directory}${local.avg_cpu_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.max_cpu_image_name} < ${local.snapshots_directory}${local.max_cpu_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.avg_ec2_cpu_image_name} < ${local.snapshots_directory}${local.avg_ec2_cpu_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.max_ec2_cpu_image_name} < ${local.snapshots_directory}${local.max_ec2_cpu_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.memory_usage_image_name} < ${local.snapshots_directory}${local.memory_usage_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.heap_size_image_name} < ${local.snapshots_directory}${local.heap_size_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.queue_size_image_name} < ${local.snapshots_directory}${local.queue_size_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.accepted_logs_image_name} < ${local.snapshots_directory}${local.accepted_logs_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.rejected_logs_image_name} < ${local.snapshots_directory}${local.rejected_logs_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "raw attachment ${local.page_to_publish_to} upload ${local.sent_logs_cwl_exporter_image_name} < ${local.snapshots_directory}${local.sent_logs_cwl_exporter_image_name}"
+  }
+  provisioner "local-exec" {
+    command = "echo \"${local.wiki_page_string}\" > wiki_page.xwiki"
+  }
+
+  provisioner "local-exec" {
+    command = "raw write ${local.page_to_publish_to} --title \"Log Rate ${var.log_rate}, Log Size ${var.log_size_in_bytes} bytes\" --syntax xwiki < wiki_page.xwiki"
   }
 }
