@@ -2,6 +2,10 @@ provider "aws" {
   region = var.region
 }
 
+provider "remote" {
+  max_sessions = 2
+}
+
 # this ami is used to launch the emitter instance
 data "aws_ami" "amazonlinux2" {
   most_recent = true
