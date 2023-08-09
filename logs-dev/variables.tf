@@ -96,7 +96,7 @@ variable "send_batch_size" {
 }
 
 variable "max_batch_size" {
-  default = 0
+  default = 10000
 }
 
 variable "batch_timeout" {
