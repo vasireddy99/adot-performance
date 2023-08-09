@@ -1,3 +1,6 @@
+extensions:
+  pprof:
+
 receivers:
   filelog:
     include: [/*.log]
@@ -10,6 +13,13 @@ receivers:
           static_configs:
             - targets: ['localhost:8888']
 processors:
+  attributes/modify:
+    actions:
+      - key: "service_instance_id"
+        action: delete
+      - key: "instance_id"
+        value: "${instance_id}"
+        action: insert
   batch:
     send_batch_size: ${send_batch_size}
     timeout: ${batch_timeout}s
@@ -21,6 +31,16 @@ exporters:
   awsemf:
     log_group_name: "emf-metrics-log-group"
     log_stream_name: "emf-metrics-log-stream"
+    metric_declarations:
+      - dimensions: [[service_version, instance_id],[]]
+        metric_name_selectors:
+          - "^otelcol_process.*"
+      - dimensions: [[receiver, service_version, instance_id],[]]
+        metric_name_selectors:
+          - "^otelcol_receiver.*"
+      - dimensions: [[exporter, service_version, instance_id],[]]
+        metric_name_selectors:
+          - "^otelcol_exporter.*"
 service:
   pipelines:
     logs:
@@ -29,7 +49,9 @@ service:
      exporters: [awscloudwatchlogs]
     metrics:
      receivers: [prometheus]
+     processors: [attributes/modify]
      exporters: [awsemf]
+  extensions: [pprof]
   telemetry:
     logs:
       level: debug
