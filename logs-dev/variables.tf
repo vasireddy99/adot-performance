@@ -82,3 +82,23 @@ variable "logging_duration_in_seconds" {
 variable "log_file_path" {
   default = "/test.log"
 }
+
+variable "pre_test_delay_in_seconds" {
+  default = 120
+}
+
+variable "post_test_delay_in_seconds" {
+  default = 300
+}
+
+variable "send_batch_size" {
+  default = 10000
+}
+
+variable "max_batch_size" {
+  default = 0
+}
+
+variable "batch_timeout" {
+  default = 10
+}
