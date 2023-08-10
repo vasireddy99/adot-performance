@@ -322,7 +322,6 @@ data "remote_file" "validator_results" {
 locals {
   snapshots_directory = "snapshots/"
   extension = "-testcase-${var.log_rate}-${var.log_size_in_bytes}.png"
-
   image_names_and_json = {
     "avg_cpu_utilization" = jsonencode({
       "metrics": [
@@ -331,8 +330,7 @@ locals {
           "InstanceId", aws_instance.collection_agent.id,
           "process_name", "aws-otel-collector",
           "launch_date", local.launch_date,
-          "instance_type", aws_instance.collection_agent.instance_type,
-          "testcase", "ADOT"
+          "instance_type", aws_instance.collection_agent.instance_type
         ]
       ],
       "annotations": {
@@ -363,7 +361,6 @@ locals {
           "process_name", "aws-otel-collector",
           "launch_date", local.launch_date,
           "instance_type", aws_instance.collection_agent.instance_type,
-          "testcase", "ADOT"
         ]
       ],
       "annotations": {
