@@ -21,11 +21,8 @@
           ],
           "exe": "${process_name}",
           "append_dimensions": {
-            "testcase": "${testcase}",
             "launch_date": "${launch_date}",
-            "data_rate": "${data_rate}",
-            "instance_type": "${instance_type}",
-            "testing_ami": "${testing_ami}"
+            "instance_type": "${instance_type}"
           }
         }
       ]
