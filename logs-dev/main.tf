@@ -603,8 +603,11 @@ resource "null_resource" "add_metric_snapshots" {
 }
 
 locals {
-  page_to_publish_to = "AWS/AWS_Distro_for_OpenTelemetry/internal/logs/loadtests/testcase-${var.log_rate}-${var.log_size_in_bytes}-test"
+  page_to_publish_to = "AWS/AWS_Distro_for_OpenTelemetry/internal/logs/loadtests/testcase-${var.log_rate}-${var.log_size_in_bytes}"
   validator_results = jsondecode(data.remote_file.validator_results.content)
+  publish_images_to_wiki_commands_list = formatlist("raw attachment ${local.page_to_publish_to} upload %s${local.extension} < ${local.snapshots_directory}%s${local.extension}", keys(local.image_names_and_json), keys(local.image_names_and_json))
+  all_publish_images_to_wiki_commands = join(" && ", local.publish_images_to_wiki_commands_list)
+
   wiki_page = templatefile("wiki_page.tpl", {
     log_rate = var.log_rate
     log_size = var.log_size_in_bytes
@@ -621,9 +624,8 @@ locals {
 
 resource "null_resource" "publish_images_to_wiki" {
   depends_on = [null_resource.add_metric_snapshots]
-  for_each = local.image_names_and_json
   provisioner "local-exec" {
-    command = "raw attachment ${local.page_to_publish_to} upload ${each.key} < ${local.snapshots_directory}${each.key}${local.extension}"
+    command = local.all_publish_images_to_wiki_commands
   }
 }
 
