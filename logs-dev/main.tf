@@ -622,8 +622,15 @@ locals {
   wiki_page_string = tostring(local.wiki_page)
 }
 
-resource "null_resource" "publish_images_to_wiki" {
+resource "null_resource" "create_wiki_page" {
   depends_on = [null_resource.add_metric_snapshots]
+  provisioner "local-exec" {
+    command = "echo wiki_page | raw write ${local.page_to_publish_to}"
+  }
+}
+
+resource "null_resource" "publish_images_to_wiki" {
+  depends_on = [null_resource.create_wiki_page]
   provisioner "local-exec" {
     command = local.all_publish_images_to_wiki_commands
   }
